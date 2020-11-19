@@ -28,7 +28,7 @@ import sys
 
 
 @task
-def list_users(ctx):
+def list_users(ctx, file=None):
     """
     Lists users on the specified host.
     """
@@ -38,9 +38,16 @@ def list_users(ctx):
     # print(users.list_users(**{'fabric_kwargs': {'hide': True}}))
     # with fileinput.input() as f:
     #     text = f.read()
-    with sys.stdin as f:
-        text = f.read()
-    print(text)
+    print('file', file)
+    input_ = None
+    if file is None:
+        input_ = sys.stdin
+    else:
+        input_ = open(file, 'r')
+    with input_ as f:
+        for line in f:
+            print('line:', line.strip())
+    print('done')
 
 
 # @task
