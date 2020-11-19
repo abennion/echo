@@ -3,6 +3,8 @@
 Runners for executing shell commands.
 """
 
+import sys
+
 
 def create_instance(name, *args, **kwargs):
     """
@@ -40,3 +42,6 @@ class FabricRunner(RunnerBase):
     def run_command(self, cmd, *args, **kwargs):
         fabric_kwargs = kwargs.get('fabric_kwargs', {})
         return self.connection.sudo(cmd, **fabric_kwargs).stdout
+
+    def read_stdin(self, *args, **kwargs):
+        return self.connection.read_our_stdin(sys.stdin)

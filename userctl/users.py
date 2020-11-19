@@ -36,7 +36,10 @@ class Users(object):
         self.runner = kwargs.get('runner', None)
 
     def run_command(self, cmd, *args, **kwargs):
-        return self.runner.run_command(cmd, *args, **kwargs)
+        return
+
+    def read_stdin(self, *args, **kwargs):
+        return
 
     # def dir_exists(self, dirname, **kwargs):
     #     """
@@ -157,7 +160,8 @@ class Users(object):
         #     res += "username: {}, uid: {}, comment: {}\n".format(
         #         username, details['uid'], details['comment'])
         # return res.strip()
-        return "test"
+        text = self.read_stdin(**kwargs)
+        return text
 
     # def delete_user(self, name, **kwargs):
     #     """

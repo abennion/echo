@@ -7,6 +7,9 @@ from invoke import task
 from userctl.runners import create_instance as create_runner
 from userctl.users import Users
 
+import fileinput
+import sys
+
 
 # TODO: fix calls to localhost
 
@@ -31,7 +34,13 @@ def list_users(ctx):
     """
     runner = create_runner('fabric', connection=ctx)
     users = Users(runner=runner)
-    print(users.list_users(**{'fabric_kwargs': {'hide': True}}).strip())
+    # print(users.list_users(**{'fabric_kwargs': {'hide': True}}).strip())
+    # print(users.list_users(**{'fabric_kwargs': {'hide': True}}))
+    # with fileinput.input() as f:
+    #     text = f.read()
+    with sys.stdin as f:
+        text = f.read()
+    print(text)
 
 
 # @task
