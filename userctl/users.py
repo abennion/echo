@@ -160,8 +160,6 @@
 #         #     res += "username: {}, uid: {}, comment: {}\n".format(
 #         #         username, details['uid'], details['comment'])
 #         # return res.strip()
-#         text = self.read_stdin(**kwargs)
-#         return text
 
 #     # def delete_user(self, name, **kwargs):
 #     #     """
