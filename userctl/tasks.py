@@ -32,6 +32,7 @@ def list_users(ctx, file=None):
     """
     Lists users on the specified host.
     """
+    # TODO: rename fabric stuff
     runner = create_runner('fabric', connection=ctx)
     users = Users(runner=runner)
     # print(users.list_users(**{'fabric_kwargs': {'hide': True}}).strip())
