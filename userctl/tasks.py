@@ -3,14 +3,12 @@
 Tasks for managing users with Fabric.
 """
 from __future__ import print_function
-# import fileinput
 import sys
-import csv
 import logging as log
-from datetime import datetime, timedelta
 from invoke import task
-# from userctl.runners import create_instance as create_runner
+from userctl.runners import create_instance as create_runner
 # from userctl.users import Users
+from userctl.log_parser import LogParser
 
 # @task
 # def add_user(ctx, user, public_key_filename):
@@ -26,43 +24,14 @@ from invoke import task
 #     print("user added")
 
 
-def init_stats(*args, **kwargs):
-    return dict({'begin_time': None})
-
-
-def parse_line(line, stats, *args, **kwargs):
-    log.debug('line: %s', line)
-
-    if stats is None:
-        stats = init_stats()
-
-    reader = csv.reader([line], delimiter=',', quotechar='"')
-    row = next(reader)
-
-    date = datetime.fromtimestamp(int(row[3]))
-    if stats['begin_time'] is None:
-        stats['begin_time'] = date
-    elapsed = date - stats['begin_time']
-    log.debug('elapsed: %s', elapsed)
-
-    request = row[4]
-    section = request.split('/')[1]
-    if not section in stats:
-        stats[section] = 1
-    else:
-        stats[section] += 1
-
-    return stats
-
-
 @task
 def list_users(ctx, file=None):
     """
     Lists users on the specified host.
     """
     # TODO: rename fabric stuff
-    # runner = create_runner('fabric', connection=ctx)
-    # users = Users(runner=runner)
+    runner = create_runner('invoke', connection=ctx)
+    parser = LogParser(runner=runner)
     # print(users.list_users(**{'fabric_kwargs': {'hide': True}}).strip())
     # print(users.list_users(**{'fabric_kwargs': {'hide': True}}))
 
@@ -77,7 +46,7 @@ def list_users(ctx, file=None):
     # TODO: logger
     # TODO: decorators
 
-    stats = init_stats()
+    # stats = init_stats()
 
     input_ = None
     if file is None:
@@ -89,7 +58,7 @@ def list_users(ctx, file=None):
         for line in f:
             try:
                 # lines are not necessarily in order!!!
-                stats = parse_line(line, stats)
+                stats = parser.parse_line(line, None)
                 log.debug('stats: %s', stats)
             except Exception as e:
                 log.error('err: %s', e)

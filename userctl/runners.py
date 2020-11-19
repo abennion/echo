@@ -3,17 +3,20 @@
 Runners for executing shell commands.
 """
 
-import sys
-
 
 def create_instance(name, *args, **kwargs):
     """
     Runner factory method.
     """
     classes = {
-        'fabric': FabricRunner
+        'fabric': FabricRunner,
+        'invoke': InvokeRunner
     }
-    runner_class = classes.get(name.lower(), FabricRunner)
+    runner_class = None
+    if name.lower() == 'fabric':
+        runner_class = classes.get('fabric', FabricRunner)
+    else:
+        runner_class = classes.get('invoke', InvokeRunner)
     if runner_class:
         return runner_class(*args, **kwargs)
     raise NotImplementedError()
@@ -43,5 +46,19 @@ class FabricRunner(RunnerBase):
         fabric_kwargs = kwargs.get('fabric_kwargs', {})
         return self.connection.sudo(cmd, **fabric_kwargs).stdout
 
-    def read_stdin(self, *args, **kwargs):
-        return self.connection.read_our_stdin(sys.stdin)
+
+class InvokeRunner(RunnerBase):
+    """
+    Command runner implemented using Invoke.
+    """
+    connection = None
+
+    def post_initialize(self, *args, **kwargs):
+        self.connection = kwargs.get('connection', None)
+
+    def run_command(self, cmd, *args, **kwargs):
+        invoke_kwargs = kwargs.get('invoke_kwargs', {})
+        return self.connection.run(cmd, **invoke_kwargs).stdout
+
+    # def read_stdin(self, *args, **kwargs):
+    #     return self.connection.read_our_stdin(sys.stdin)
