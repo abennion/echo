@@ -1,4 +1,4 @@
-autopep8==1.4.1
-fabric==2.4.0
+autopep8==1.5.4
+fabric==2.5.0
 pyinvoke==1.0.4
-pylint==1.9.3
+pylint==2.6.0
