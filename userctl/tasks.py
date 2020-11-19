@@ -62,6 +62,7 @@ def list_users(ctx, file=None):
 
     begin_time = None
     next_begin_time = None
+    stats = dict({})
 
     input_ = None
     if file is None:
@@ -82,11 +83,16 @@ def list_users(ctx, file=None):
                 print('elapsed', elapsed)
                 request = row[4]
                 section = request.split('/')[1]
+                if not section in stats:
+                    stats[section] = 1
+                else:
+                    stats[section] += 1
                 print(
                     'date:', date,
                     ', request:', request,
                     ', section:', section
                 )
+                print('stats', stats)
             except Exception as e:
                 print(e)
     print('done')
