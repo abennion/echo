@@ -59,8 +59,9 @@ class LogParser(object):
 
         delimiter = kwargs.get('delimiter', ',')
         quotechar = kwargs.get('quotechar', '"')
-        if stats is None:
-            stats = LogParser.init_stats()
+
+        if self.state is None:
+            self.state = LogParser.init_state()
 
         reader = csv.reader([line], delimiter=delimiter, quotechar=quotechar)
         row = next(reader)
@@ -75,16 +76,16 @@ class LogParser(object):
         # threshold should be 10 requests per second but should be configurable.
 
         date = datetime.fromtimestamp(int(row[3]))
-        if stats['begin_time'] is None:
-            stats['begin_time'] = date
-        elapsed = date - stats['begin_time']
+        if self.state['stats']['begin_time'] is None:
+            self.state['stats']['begin_time'] = date
+        elapsed = date - self.state['stats']['begin_time']
         log.debug('elapsed: %s', elapsed)
 
         request = row[4]
         section = request.split('/')[1]
-        if not section in stats:
-            stats[section] = 1
+        if not section in self.state['stats']:
+            self.state['stats'][section] = 1
         else:
-            stats[section] += 1
+            self.state['stats'][section] += 1
 
-        return stats
+        return self.state['stats']

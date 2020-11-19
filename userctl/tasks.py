@@ -31,6 +31,9 @@ def list_users(ctx, file=None):
     """
     # TODO: rename fabric stuff
     runner = create_runner('invoke', connection=ctx)
+
+    # TODO: if the runner is remote, then we don't want to do one line at a
+    # time. in that case, take a file name, i guess
     parser = LogParser(runner=runner)
     # print(users.list_users(**{'fabric_kwargs': {'hide': True}}).strip())
     # print(users.list_users(**{'fabric_kwargs': {'hide': True}}))
@@ -40,13 +43,15 @@ def list_users(ctx, file=None):
 
     # TODO: deal with header
     # TODO: parse section
-    # TODO: try in python7
+    # TODO: try in python2.7
     # TODO: pure functions
     # TODO: duck typing, small methods
     # TODO: logger
     # TODO: decorators
 
     # stats = init_stats()
+
+    # TODO: pass this into the parser
 
     input_ = None
     if file is None:
@@ -62,4 +67,5 @@ def list_users(ctx, file=None):
                 log.debug('stats: %s', stats)
             except Exception as e:
                 log.error('err: %s', e)
+
     print('done')
