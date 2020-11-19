@@ -1,3 +1,4 @@
 autopep8==1.5.4
+invoke==1.4.1
 pyinvoke==1.0.4
 pylint==2.6.0

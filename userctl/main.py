@@ -1,12 +1,22 @@
 # pylint: disable=C0103,C0111
 from __future__ import print_function
 import os
+import logging
 # from fabric.main import Fab
 # from fabric.config import Config
 # from .executor import FabExecutor
-from . import __version__ as version
 from invoke import Program
+from . import __version__ as version
 
+# TODO: pass in config from args
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        # rotating file handler
+        logging.StreamHandler()  # sys.stdout
+    ]
+)
 
 # class UserCtl(Fab):
 #     def load_collection(self):
