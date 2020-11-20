@@ -6,6 +6,7 @@ import logging
 from invoke import Program
 from . import __version__ as version
 
+# TODO: Make configurable.
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",

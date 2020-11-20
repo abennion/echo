@@ -36,14 +36,10 @@ class LogParser(object):
         """
         return {
             'stats': {
-                'begin_time': None,
-                'end_time': None,
-                # we need to save the last 10 seconds of info...
-                # we need to save the last two minutes of info...
-                'is_traffic_alerting': False,
-                'traffic_alert_datetime': None,
-                'traffic_alert_threshold': 10,
-                'traffic_alert_duraction_seconds': 120
+                'is_traffic_alerting': False
+                # 'traffic_alert_datetime': None,
+                # 'traffic_alert_threshold': 10,
+                # 'traffic_alert_duraction_seconds': 120
             },
             'rows': {}
         }
@@ -59,13 +55,13 @@ class LogParser(object):
 
     def get_timestamp(self, row, col, *args, **kwargs):
         """
-        Returns the log entry timestamp.
+        Returns the timestamp of the log entry.
         """
         return int(row[col])
 
     def get_event_time(self, timestamp, *args, **kwargs):
         """
-        Returns the log entry timestamp as an event datetime.
+        Returns the event datetime of the log entry based on the timestamp.
         """
         return datetime.fromtimestamp(timestamp)
 
@@ -96,7 +92,7 @@ class LogParser(object):
 
     def get_total_requests(self, *args, **kwargs):
         """
-        Return total summary count of requests.
+        Returns the total summary count of requests.
         """
         total_requests = 0
         for event_time in self.state['rows']:
@@ -105,17 +101,13 @@ class LogParser(object):
         return total_requests
 
     def check_traffic(self, event_time, *args, **kwargs):
-        # Whenever total traffic for the past 2 minutes exceeds a certain
+        # NOTE: Whenever total traffic for the past 2 minutes exceeds a certain
         # number on average, print a message to the console saying that “High
         # traffic generated an alert - hits = {value}, triggered at {time}”.
         # The default threshold should be 10 requests per second but should be
         # configurable.
+        # TODO: but should be configurable
         total_requests = self.get_total_requests()
-
-        # “High traffic generated an alert - hits = {value}, triggered at
-        # {time}”. The default threshold should be 10 requests per second but
-        # should be configurable.
-        # TODO: is alerting or not method...
         if ((total_requests > self.traffic_alert_minutes * 60 *
                 self.traffic_alert_requests_per_minute)
                 and not self.state['stats']['is_traffic_alerting']):
@@ -130,14 +122,14 @@ class LogParser(object):
             print(msg.format(total_requests, event_time))
 
     def check_stats(self, from_datetime, *args, **kwargs):
+        # NOTE: For every 10 seconds of log lines, display stats about the traffic
+        # during those 10 seconds: the sections of the web site with the most
+        # hits.
         stats_rows = {
             k: v for (k, v) in self.state['rows'].items()
             if k >= from_datetime
         }
 
-        # For every 10 seconds of log lines, display stats about the traffic
-        # during those 10 seconds: the sections of the web site with the most
-        # hits.
         stats = {}
         for event_time in stats_rows.values():
             for section, count in event_time.items():
@@ -147,7 +139,7 @@ class LogParser(object):
         print('stats', stats)
 
     def get_row(self, line, *args, **kwargs):
-        # TODO: parse other things
+        # TODO: Create factory to handle other types of logs.
         delimiter = kwargs.get('delimiter', ',')
         quotechar = kwargs.get('quotechar', '"')
         reader = csv.reader([line], delimiter=delimiter, quotechar=quotechar)
