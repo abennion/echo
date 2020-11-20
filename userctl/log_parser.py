@@ -94,6 +94,7 @@ class LogParser(object):
         # TODO: duck typing, small methods
         # TODO: logger
         # TODO: decorators
+        # TODO: unit tests
 
         self.state = LogParser.init_state()
 
