@@ -1,6 +1,7 @@
 # pylint: disable=W0613,C0111
 """
-Runners for executing shell commands.
+Runners for executing shell commands. This isn't used in this example, but it's 
+here if the CLI were extended to support remote calls and other environments.
 """
 
 

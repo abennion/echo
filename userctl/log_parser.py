@@ -1,8 +1,8 @@
 # pylint: disable=W0613, C0111
 """
-Parses logs, potentially for different host environments.
+Parses logs, potentially for different host environments. I wrote this for
+Frabric originally, and it could be adapted for remote calls again.
 """
-# from userctl.utils import load_platform_subclass
 
 import sys
 import csv
@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 pp = pprint.PrettyPrinter(indent=4)
 
 
+# TODO: Use a factory for other types of input.
 class LogParser(object):
     """
     Log parser for a generic Linux host.
@@ -20,6 +21,14 @@ class LogParser(object):
 
     runner = None
     file = None
+
+    # # self.state
+    # {
+    #   timestamp:
+    #     {
+    #       section: count
+    #     }
+    # }
     state = None
 
     def __init__(self, *args, **kwargs):
@@ -48,27 +57,50 @@ class LogParser(object):
             'rows': {}
         }
 
-    @staticmethod
-    def get_section(text):
+    def get_section(self, text):
         # Hate it.
         path = text.split(' ')[1]
         return path.split('/')[1]
+
+    def get_timestamp(self, row, *args, **kwargs):
+        return int(row[3])
+
+    def get_event_time(self, timestamp, *args, **kwargs):
+        return datetime.fromtimestamp(timestamp)
+
+    def update_state(self, state, event_time, section, *args, **kwargs):
+        # inc the count for the event time and section
+        if not event_time in state['rows'].keys():
+            state['rows'][event_time] = {
+                section: 1
+            }
+        else:
+            if not section in state['rows'][event_time].keys():
+                state['rows'][event_time][section] = 1
+            else:
+                state['rows'][event_time][section] += 1
+        return state
+
+    def remove_old_rows(self, state, alert_time, *args, **kwargs):
+        state['rows'] = {k: v for (k, v) in state['rows'].items()
+                         if k >= alert_time}
+        return state
+
+    def get_total_requests(self, *args, **kwargs):
+        # for event_time in self.state['rows'].keys():
+        total_requests = 0
+        for event_time in self.state['rows']:
+            for section in self.state['rows'][event_time]:
+                total_requests += self.state['rows'][event_time][section]
+        return total_requests
 
     def parse_line(self, line, *args, **kwargs):
         log.debug('line: %s', line)
         delimiter = kwargs.get('delimiter', ',')
         quotechar = kwargs.get('quotechar', '"')
 
-        # TODO: Use a factory for other types of input.
         reader = csv.reader([line], delimiter=delimiter, quotechar=quotechar)
         row = next(reader)
-
-        # {
-        #   timestamp:
-        #     {
-        #       section: count
-        #     }
-        # }
 
         # For every 10 seconds of log lines, display stats about the traffic
         # during those 10 seconds: the sections of the web site with the most hits
@@ -79,57 +111,31 @@ class LogParser(object):
         # generated an alert - hits = {value}, triggered at {time}”. The default
         # threshold should be 10 requests per second but should be configurable.
 
-        # # row ['10.0.0.1', '-', 'apache', '1549574338', 'GET /api/user HTTP/1.0', '200', '1234']
-        # print('row', row)
+        # 2. 2 minutes (configurable)
+        # 1. 10 seconds (configurable)
+        # 3. unit tests
+        # 4. docs
 
-        # ASSUMPTION: we know the order of the fields, and they are correct
-
-        # int(datetime.utcnow().timestamp())
-
-        timestamp = int(row[3])
-        # the event time of the lastest row
-        event_time = datetime.fromtimestamp(timestamp)
+        timestamp = self.get_timestamp(row)
+        event_time = self.get_event_time(timestamp)
         stats_time = event_time - timedelta(seconds=10)
         alert_time = event_time - timedelta(seconds=120)
-        section = LogParser.get_section(row[4])
+        section = self.get_section(row[4])
 
-        # inc the count for the event time and section
-        if not event_time in self.state['rows'].keys():
-            self.state['rows'][event_time] = {
-                section: 1
-            }
-        else:
-            if not section in self.state['rows'][event_time].keys():
-                self.state['rows'][event_time][section] = 1
-            else:
-                self.state['rows'][event_time][section] += 1
+        self.state = self.update_state(self.state, event_time, section)
 
-        # cull records by time (talk about that)
-        self.state['rows'] = {k: v for (k, v) in self.state['rows'].items()
-                              if k >= alert_time}
-
-        # TODO: count total requests during x minutes (time), e.g. sum counts
-        # TODO: we need the ave per minute
-        # get total requests last x minutes
-        # itertools?
-        total_requests = 0
-        # for event_time in self.state['rows'].keys():
-        for event_time in self.state['rows']:
-            for section in self.state['rows'][event_time]:
-                total_requests += self.state['rows'][event_time][section]
-
+        self.state = self.remove_old_rows(self.state, alert_time)
+        total_requests = self.get_total_requests()
         # The default threshold should be 10 requests per second
         # 2 minutes = 120 seconds = 10 * 120 == 1200 requests
-
         print('total_requests', total_requests)
 
-        state_ = {
+        stats_rows = {
             k: v for (k, v) in self.state['rows'].items()
             if k >= stats_time
         }
 
-        pp.pprint('stats state: {}'.format(state_))
-
+        pp.pprint('stats state: {}'.format(stats_rows))
         # The default threshold should be 10 requests per second (for 2 minutes (configurable))
 
         return self.state
