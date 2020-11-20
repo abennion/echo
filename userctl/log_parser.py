@@ -81,9 +81,9 @@ class LogParser(object):
                 state['rows'][event_time][section] += 1
         return state
 
-    def remove_old_rows(self, state, alert_time, *args, **kwargs):
+    def remove_old_rows(self, state, duration, *args, **kwargs):
         state['rows'] = {k: v for (k, v) in state['rows'].items()
-                         if k >= alert_time}
+                         if k >= duration}
         return state
 
     def get_total_requests(self, *args, **kwargs):
