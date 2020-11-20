@@ -104,34 +104,12 @@ class LogParser(object):
                 total_requests += self.state['rows'][event_time][section]
         return total_requests
 
-    def parse_line(self, line, *args, **kwargs):
-        """
-        Parse and handle the specified log line entry.
-        """
-        log.debug('line: %s', line)
-        delimiter = kwargs.get('delimiter', ',')
-        quotechar = kwargs.get('quotechar', '"')
-        timestamp_column = kwargs.get('timestamp_column', 3)
-        section_column = kwargs.get('section_column', 4)
-
-        # TODO: parse other things
-        reader = csv.reader([line], delimiter=delimiter, quotechar=quotechar)
-        row = next(reader)
-
-        timestamp = self.get_timestamp(row, timestamp_column)
-        event_time = self.get_event_time(timestamp)
-        stats_begin_datetime = event_time - \
-            timedelta(seconds=self.stats_seconds)
-        alert_begin_datetime = event_time - \
-            timedelta(seconds=self.traffic_alert_minutes * 60)
-        section = self.get_section(row, section_column)
-        self.state = self.update_state(self.state, event_time, section)
-        self.state = self.remove_old_rows(self.state, alert_begin_datetime)
-
-        # Whenever total traffic for the past 2 minutes exceeds a certain number on
-        # average, print a message to the console saying that “High traffic
-        # generated an alert - hits = {value}, triggered at {time}”. The default
-        # threshold should be 10 requests per second but should be configurable.
+    def check_traffic(self, event_time, *args, **kwargs):
+        # Whenever total traffic for the past 2 minutes exceeds a certain
+        # number on average, print a message to the console saying that “High
+        # traffic generated an alert - hits = {value}, triggered at {time}”.
+        # The default threshold should be 10 requests per second but should be
+        # configurable.
         total_requests = self.get_total_requests()
 
         # “High traffic generated an alert - hits = {value}, triggered at
@@ -151,14 +129,15 @@ class LogParser(object):
             msg = 'High traffic alert recovered - hits = {}, triggered at {}'
             print(msg.format(total_requests, event_time))
 
+    def check_stats(self, from_datetime, *args, **kwargs):
         stats_rows = {
             k: v for (k, v) in self.state['rows'].items()
-            if k >= stats_begin_datetime
+            if k >= from_datetime
         }
 
         # For every 10 seconds of log lines, display stats about the traffic
-        # during those 10 seconds: the sections of the web site with the most hit
-        # TODO: since last
+        # during those 10 seconds: the sections of the web site with the most
+        # hits.
         stats = {}
         for event_time in stats_rows.values():
             for section, count in event_time.items():
@@ -167,6 +146,32 @@ class LogParser(object):
                 stats[section] += count
         print('stats', stats)
 
+    def get_row(self, line, *args, **kwargs):
+        # TODO: parse other things
+        delimiter = kwargs.get('delimiter', ',')
+        quotechar = kwargs.get('quotechar', '"')
+        reader = csv.reader([line], delimiter=delimiter, quotechar=quotechar)
+        return next(reader)
+
+    def parse_line(self, line, *args, **kwargs):
+        """
+        Parse and handle the specified log line entry.
+        """
+        log.debug('line: %s', line)
+        timestamp_column = kwargs.get('timestamp_column', 3)
+        section_column = kwargs.get('section_column', 4)
+        row = self.get_row(line, *args, **kwargs)
+        timestamp = self.get_timestamp(row, timestamp_column)
+        event_time = self.get_event_time(timestamp)
+        stats_from_date = event_time - timedelta(
+            seconds=self.stats_seconds)
+        alert_from_date = event_time - timedelta(
+            seconds=self.traffic_alert_minutes * 60)
+        section = self.get_section(row, section_column)
+        self.state = self.update_state(self.state, event_time, section)
+        self.state = self.remove_old_rows(self.state, alert_from_date)
+        self.check_traffic(event_time)
+        self.check_stats(stats_from_date)
         return self.state
 
     def get_input(self, *args, **kwargs):
