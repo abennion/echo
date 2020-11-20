@@ -167,5 +167,3 @@ class LogParser(object):
                 # pylint: disable=broad-except
                 except Exception as err:
                     log.error('err: %s', err)
-
-        pp.pprint(self.state)
