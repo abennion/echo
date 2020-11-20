@@ -127,7 +127,7 @@ class LogParser(object):
         total_requests = 0
         # for event_time in self.state['rows'].keys():
         for event_time in self.state['rows']:
-            for section in self.state['rows'][event_time].keys():
+            for section in self.state['rows'][event_time]:
                 total_requests += self.state['rows'][event_time][section]
 
         # The default threshold should be 10 requests per second
