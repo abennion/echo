@@ -116,6 +116,7 @@ class LogParser(object):
         # “High traffic generated an alert - hits = {value}, triggered at
         # {time}”. The default threshold should be 10 requests per second but
         # should be configurable.
+        # TODO: is alerting or not method...
         if ((total_requests > self.traffic_alert_minutes * 60 *
                 self.traffic_alert_requests_per_minute) and not self.state['stats']['is_traffic_alerting']):
             self.state['stats']['is_traffic_alerting'] = True
