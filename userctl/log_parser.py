@@ -58,7 +58,7 @@ class LogParser(object):
         return datetime.fromtimestamp(timestamp)
 
     def update_state(self, state, event_time, section, *args, **kwargs):
-        # inc the count for the event time and section
+        # event_time / section: count
         if not event_time in state['rows'].keys():
             state['rows'][event_time] = {
                 section: 1
@@ -117,21 +117,14 @@ class LogParser(object):
                 self.traffic_alert_requests_per_minute)
                 and not self.state['stats']['is_traffic_alerting']):
             self.state['stats']['is_traffic_alerting'] = True
-            pattern = 'High traffic generated an alert - hits = {}, triggered at {}'
-            print(
-                pattern.format(
-                    total_requests, event_time
-                )
-            )
+            msg = 'High traffic generated an alert - hits = {}, triggered at {}'
+            print(msg.format(total_requests, event_time))
         elif ((total_requests <= self.traffic_alert_minutes * 60 *
                 self.traffic_alert_requests_per_minute)
                 and self.state['stats']['is_traffic_alerting']):
             self.state['stats']['is_traffic_alerting'] = False
-            print(
-                'High traffic alert recovered - hits = {}, triggered at {}'.format(
-                    total_requests, event_time
-                )
-            )
+            msg = 'High traffic alert recovered - hits = {}, triggered at {}'
+            print(msg.format(total_requests, event_time))
 
         stats_rows = {
             k: v for (k, v) in self.state['rows'].items()
@@ -140,6 +133,7 @@ class LogParser(object):
 
         # For every 10 seconds of log lines, display stats about the traffic
         # during those 10 seconds: the sections of the web site with the most hit
+        # TODO: since last
         stats = {}
         for event_time in stats_rows.values():
             for section, count in event_time.items():

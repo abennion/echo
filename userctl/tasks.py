@@ -12,7 +12,7 @@ from userctl.log_parser import LogParser
 @task
 def parse_log(ctx, file=None):
     """
-    Parse log file content by name or input.
+    Parse log by file name or stdin.
     """
     runner = create_runner('invoke', connection=ctx)
     parser = LogParser(runner=runner, file=file)
