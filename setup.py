@@ -3,27 +3,17 @@ import os
 import setuptools
 
 
-package_name = "userctl"
-binary_name = "userctl"
+package_name = "logctl"
+binary_name = "logctl"
 
 packages = setuptools.find_packages(
-    include=["userctl", "{}.*".format("userctl")]
+    include=["logctl", "{}.*".format("logctl")]
 )
 
 _locals = {}
 with open(os.path.join(package_name, "_version.py")) as fp:
     exec(fp.read(), None, _locals)
 version = _locals["__version__"]
-
-# setup(
-#     name='tester',
-#     version='0.1.0',
-#     packages=['tester'],
-#     install_requires=['invoke'],
-#     entry_points={
-#         'console_scripts': ['tester = tester.main:program.run']
-#     }
-# )
 
 setuptools.setup(
     name=package_name,
@@ -32,7 +22,7 @@ setuptools.setup(
     license="MIT",
     author="John Doe",
     author_email="jdoe@example.com",
-    url="http://userctl.example.com",
+    url="http://logctl.example.com",
     install_requires=[
         "invoke>=1.0,<2.0"
     ],

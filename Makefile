@@ -8,7 +8,7 @@ install:
 	./venv/bin/pip install -e ./
 
 uninstall:
-	./venv/bin/pip uninstall userctl -y
+	./venv/bin/pip uninstall logctl -y
 
 clean:
 	rm -rf venv

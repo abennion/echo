@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-userctl parse-log -f ./docs/echo-coding-challenge-logs.csv
+logctl parse-log -f ./docs/echo-coding-challenge-logs.csv
 
 # echo '"remotehost","rfc931","authuser","date","request","status","bytes"
 # "10.0.0.2","-","apache",1549573860,"GET /api/user HTTP/1.0",200,1234
@@ -29,4 +29,4 @@ userctl parse-log -f ./docs/echo-coding-challenge-logs.csv
 # "10.0.0.1","-","apache",1549573862,"GET /api/help HTTP/1.0",200,1234
 # "10.0.0.1","-","apache",1549573862,"GET /report HTTP/1.0",500,1194
 # "10.0.0.2","-","apache",1549573862,"GET /report HTTP/1.0",200,1307
-# "10.0.0.2","-","apache",1549573863,"GET /report HTTP/1.0",200,1194' | userctl list-users
+# "10.0.0.2","-","apache",1549573863,"GET /report HTTP/1.0",200,1194' | logctl parse-log

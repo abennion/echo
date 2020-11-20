@@ -6,7 +6,7 @@ import logging
 from invoke import Program
 from . import __version__ as version
 
-# TODO: Make configurable.
+# TODO: make configurable
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -16,17 +16,17 @@ logging.basicConfig(
 )
 
 
-class UserCtl(Program):
+class logctl(Program):
     def load_collection(self):
         # Unless specified by the user, search within the module.
         if self.args['search-root'].value is None:
             path = os.path.dirname(os.path.abspath(__file__))
             print("path: {}".format(path))
             self.args['search-root'].value = path
-        super(UserCtl, self).load_collection()
+        super(logctl, self).load_collection()
 
 
-program = UserCtl(
-    name="userctl",
+program = logctl(
+    name="logctl",
     version=version
 )

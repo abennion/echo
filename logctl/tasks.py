@@ -5,8 +5,8 @@ Tasks for managing log files.
 from __future__ import print_function
 import logging as log
 from invoke import task
-from userctl.runners import create_instance as create_runner
-from userctl.log_parser import LogParser
+from logctl.runners import create_instance as create_runner
+from logctl.log_parser import LogParser
 
 
 @task
