@@ -1,19 +1,15 @@
 # pylint: disable=W0613, C0111
 """
-Parses logs, potentially for different host environments. I wrote this for
-Frabric originally. It could be adapted for remote calls.
+Parses logs, potentially for different host environments. Written for Frabric 
+originally. It could be adapted for remote calls.
 """
 
 import sys
 import csv
 import logging as log
-import pprint
 from datetime import datetime, timedelta
 
-pp = pprint.PrettyPrinter(indent=4)
 
-
-# TODO: Use a factory for other types of input.
 class LogParser(object):
     """
     Log parser for a generic Linux host.
@@ -151,7 +147,6 @@ class LogParser(object):
                     stats[section] = 0
                 stats[section] += count
         print('stats', stats)
-        # pp.pprint('stats state: {}'.format(stats_rows))
 
         return self.state
 
@@ -161,19 +156,10 @@ class LogParser(object):
         return open(self.file, 'r')
 
     def parse(self, *args, **kwargs):
-        # TODO: use a lib to parse logs?
-        # https://lars.readthedocs.io/en/latest/lars.apache.html#examples
-        # TODO: deal with header
-        # TODO: parse section
         # TODO: try in python2.7
-        # TODO: pure functions
-        # TODO: duck typing, small methods
-        # TODO: logger
-        # TODO: decorators
         # TODO: unit tests
         self.state = LogParser.init_state()
 
-        # TODO: throwaway header
         with self.get_input() as file:
             for line in file:
                 try:
