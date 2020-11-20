@@ -31,6 +31,9 @@ class LogParser(object):
 
     @staticmethod
     def init_state(*args, **kwargs):
+        """
+        Returns the initial state of the log summary.
+        """
         return {
             'stats': {
                 'begin_time': None,
@@ -46,18 +49,30 @@ class LogParser(object):
         }
 
     def get_section(self, row, col, *args, **kwargs):
-        # Hate it.
+        """
+        Returns the log entry section.
+        """
+        # Not great, but it works.
         text = row[col]
         path = text.split(' ')[1]
         return path.split('/')[1]
 
     def get_timestamp(self, row, col, *args, **kwargs):
+        """
+        Returns the log entry timestamp.
+        """
         return int(row[col])
 
     def get_event_time(self, timestamp, *args, **kwargs):
+        """
+        Returns the log entry timestamp as an event datetime.
+        """
         return datetime.fromtimestamp(timestamp)
 
     def update_state(self, state, event_time, section, *args, **kwargs):
+        """
+        Updates the state of the log summary.
+        """
         # event_time / section: count
         if not event_time in state['rows'].keys():
             state['rows'][event_time] = {
@@ -70,12 +85,19 @@ class LogParser(object):
                 state['rows'][event_time][section] += 1
         return state
 
-    def remove_old_rows(self, state, duration, *args, **kwargs):
-        state['rows'] = {k: v for (k, v) in state['rows'].items()
-                         if k >= duration}
+    def remove_old_rows(self, state, from_datetime, *args, **kwargs):
+        """
+        Remove rows older than the specified datetime.
+        """
+        state['rows'] = {
+            k: v for (k, v) in state['rows'].items() if k >= from_datetime
+        }
         return state
 
     def get_total_requests(self, *args, **kwargs):
+        """
+        Return total summary count of requests.
+        """
         total_requests = 0
         for event_time in self.state['rows']:
             for section in self.state['rows'][event_time]:
@@ -83,13 +105,16 @@ class LogParser(object):
         return total_requests
 
     def parse_line(self, line, *args, **kwargs):
+        """
+        Parse and handle the specified log line entry.
+        """
         log.debug('line: %s', line)
-
         delimiter = kwargs.get('delimiter', ',')
         quotechar = kwargs.get('quotechar', '"')
         timestamp_column = kwargs.get('timestamp_column', 3)
         section_column = kwargs.get('section_column', 4)
 
+        # TODO: parse other things
         reader = csv.reader([line], delimiter=delimiter, quotechar=quotechar)
         row = next(reader)
 
