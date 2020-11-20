@@ -118,21 +118,52 @@ class LogParser(object):
         # should be configurable.
         # TODO: is alerting or not method...
         if ((total_requests > self.traffic_alert_minutes * 60 *
-                self.traffic_alert_requests_per_minute) and not self.state['stats']['is_traffic_alerting']):
+                self.traffic_alert_requests_per_minute)
+                and not self.state['stats']['is_traffic_alerting']):
             self.state['stats']['is_traffic_alerting'] = True
-            log.info('High traffic generated an alert - hits = %s, triggered at %s',
-                     total_requests, event_time)
+            pattern = 'High traffic generated an alert - hits = {}, triggered at {}'
+            print(
+                pattern.format(
+                    total_requests, event_time
+                )
+            )
         elif ((total_requests <= self.traffic_alert_minutes * 60 *
-                self.traffic_alert_requests_per_minute) and self.state['stats']['is_traffic_alerting']):
+                self.traffic_alert_requests_per_minute)
+                and self.state['stats']['is_traffic_alerting']):
             self.state['stats']['is_traffic_alerting'] = False
-            log.info('High traffic alert recovered - hits = %s, triggered at %s',
-                     total_requests, event_time)
+            print(
+                'High traffic alert recovered - hits = {}, triggered at {}'.format(
+                    total_requests, event_time
+                )
+            )
 
-        # stats_rows = {
-        #     k: v for (k, v) in self.state['rows'].items()
-        #     if k >= stats_begin_datetime
-        # }
+        stats_rows = {
+            k: v for (k, v) in self.state['rows'].items()
+            if k >= stats_begin_datetime
+        }
 
+        # what section is the highest?
+        # ("stats state: {datetime.datetime(2019, 2, 7, 15, 18, 47): {'api': 1, "
+        #  "'report': 2}, datetime.datetime(2019, 2, 7, 15, 18, 46): {'api': 1}, "
+        #  "datetime.datetime(2019, 2, 7, 15, 18, 48): {'api': 1, 'report': 2}, "
+        #  "datetime.datetime(2019, 2, 7, 15, 18, 49): {'api': 1}, "
+        #  "datetime.datetime(2019, 2, 7, 15, 18, 50): {'api': 2, 'report': 1}, "
+        #  "datetime.datetime(2019, 2, 7, 15, 18, 52): {'report': 1, 'api': 1}, "
+        #  "datetime.datetime(2019, 2, 7, 15, 18, 53): {'report': 1}, "
+        #  "datetime.datetime(2019, 2, 7, 15, 18, 54): {'api': 2, 'report': 1}, "
+        #  "datetime.datetime(2019, 2, 7, 15, 18, 55): {'report': 2}, "
+        #  "datetime.datetime(2019, 2, 7, 15, 18, 56): {'api': 2}}")
+
+        stats = {}
+
+        for event_time in stats_rows.values():
+            for section, count in event_time.items():
+                if not section in stats:
+                    stats[section] = 0
+                stats[section] += count
+
+        # order by most hits
+        print('stats', stats)
         # pp.pprint('stats state: {}'.format(stats_rows))
 
         # For every 10 seconds of log lines, display stats about the traffic
