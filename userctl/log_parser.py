@@ -1,7 +1,7 @@
 # pylint: disable=W0613, C0111
 """
 Parses logs, potentially for different host environments. I wrote this for
-Frabric originally, and it could be adapted for remote calls again.
+Frabric originally. It could be adapted for remote calls.
 """
 
 import sys
@@ -21,15 +21,10 @@ class LogParser(object):
 
     runner = None
     file = None
-
-    # # self.state
-    # {
-    #   timestamp:
-    #     {
-    #       section: count
-    #     }
-    # }
     state = None
+    traffic_alert_minutes = 2
+    traffic_alert_requests_per_minute = 10
+    stats_seconds = 10
 
     def __init__(self, *args, **kwargs):
         self.post_initialize(*args, **kwargs)
@@ -37,9 +32,6 @@ class LogParser(object):
     def post_initialize(self, *args, **kwargs):
         self.runner = kwargs.get('runner', None)
         self.file = kwargs.get('file', None)
-
-    def run_command(self, cmd, *args, **kwargs):
-        return
 
     @staticmethod
     def init_state(*args, **kwargs):
@@ -57,13 +49,14 @@ class LogParser(object):
             'rows': {}
         }
 
-    def get_section(self, text):
+    def get_section(self, row, col, *args, **kwargs):
         # Hate it.
+        text = row[col]
         path = text.split(' ')[1]
         return path.split('/')[1]
 
-    def get_timestamp(self, row, *args, **kwargs):
-        return int(row[3])
+    def get_timestamp(self, row, col, *args, **kwargs):
+        return int(row[col])
 
     def get_event_time(self, timestamp, *args, **kwargs):
         return datetime.fromtimestamp(timestamp)
@@ -87,7 +80,6 @@ class LogParser(object):
         return state
 
     def get_total_requests(self, *args, **kwargs):
-        # for event_time in self.state['rows'].keys():
         total_requests = 0
         for event_time in self.state['rows']:
             for section in self.state['rows'][event_time]:
@@ -96,49 +88,61 @@ class LogParser(object):
 
     def parse_line(self, line, *args, **kwargs):
         log.debug('line: %s', line)
+
         delimiter = kwargs.get('delimiter', ',')
         quotechar = kwargs.get('quotechar', '"')
+        timestamp_column = kwargs.get('timestamp_column', 3)
+        section_column = kwargs.get('section_column', 4)
 
         reader = csv.reader([line], delimiter=delimiter, quotechar=quotechar)
         row = next(reader)
 
-        # For every 10 seconds of log lines, display stats about the traffic
-        # during those 10 seconds: the sections of the web site with the most hits
-        # * strategy 1: assume they are in order and then make adjustments
+        timestamp = self.get_timestamp(row, timestamp_column)
+        event_time = self.get_event_time(timestamp)
+        stats_begin_datetime = event_time - \
+            timedelta(seconds=self.stats_seconds)
+        alert_begin_datetime = event_time - \
+            timedelta(seconds=self.traffic_alert_minutes * 60)
+        section = self.get_section(row, section_column)
+        self.state = self.update_state(self.state, event_time, section)
+        self.state = self.remove_old_rows(self.state, alert_begin_datetime)
 
         # Whenever total traffic for the past 2 minutes exceeds a certain number on
         # average, print a message to the console saying that “High traffic
         # generated an alert - hits = {value}, triggered at {time}”. The default
         # threshold should be 10 requests per second but should be configurable.
-
-        # 2. 2 minutes (configurable)
-        # 1. 10 seconds (configurable)
-        # 3. unit tests
-        # 4. docs
-
-        timestamp = self.get_timestamp(row)
-        event_time = self.get_event_time(timestamp)
-        stats_time = event_time - timedelta(seconds=10)
-        alert_time = event_time - timedelta(seconds=120)
-        section = self.get_section(row[4])
-
-        self.state = self.update_state(self.state, event_time, section)
-
-        self.state = self.remove_old_rows(self.state, alert_time)
         total_requests = self.get_total_requests()
-        # The default threshold should be 10 requests per second
-        # 2 minutes = 120 seconds = 10 * 120 == 1200 requests
-        print('total_requests', total_requests)
 
-        stats_rows = {
-            k: v for (k, v) in self.state['rows'].items()
-            if k >= stats_time
-        }
+        # “High traffic generated an alert - hits = {value}, triggered at
+        # {time}”. The default threshold should be 10 requests per second but
+        # should be configurable.
+        if ((total_requests > self.traffic_alert_minutes * 60 *
+                self.traffic_alert_requests_per_minute) and not self.state['stats']['is_traffic_alerting']):
+            self.state['stats']['is_traffic_alerting'] = True
+            log.info('High traffic generated an alert - hits = %s, triggered at %s',
+                     total_requests, event_time)
+        elif ((total_requests <= self.traffic_alert_minutes * 60 *
+                self.traffic_alert_requests_per_minute) and self.state['stats']['is_traffic_alerting']):
+            self.state['stats']['is_traffic_alerting'] = False
+            log.info('High traffic alert recovered - hits = %s, triggered at %s',
+                     total_requests, event_time)
 
-        pp.pprint('stats state: {}'.format(stats_rows))
-        # The default threshold should be 10 requests per second (for 2 minutes (configurable))
+        # stats_rows = {
+        #     k: v for (k, v) in self.state['rows'].items()
+        #     if k >= stats_begin_datetime
+        # }
+
+        # pp.pprint('stats state: {}'.format(stats_rows))
+
+        # For every 10 seconds of log lines, display stats about the traffic
+        # during those 10 seconds: the sections of the web site with the most hits
 
         return self.state
+
+    def get_input(self, *args, **kwargs):
+        if self.file is None:
+            return sys.stdin
+        return open(self.file, 'r')
 
     def parse(self, *args, **kwargs):
         # TODO: use a lib to parse logs?
@@ -151,20 +155,10 @@ class LogParser(object):
         # TODO: logger
         # TODO: decorators
         # TODO: unit tests
-
-        # TODO: kwargs.get('parse_args', {})
-
         self.state = LogParser.init_state()
 
         # TODO: throwaway header
-
-        input_ = None
-        if self.file is None:
-            input_ = sys.stdin
-        else:
-            input_ = open(self.file, 'r')
-
-        with input_ as file:
+        with self.get_input() as file:
             for line in file:
                 try:
                     self.parse_line(line, None)

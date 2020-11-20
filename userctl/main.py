@@ -7,7 +7,7 @@ from invoke import Program
 from . import __version__ as version
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,  # DEBUG
     # format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
