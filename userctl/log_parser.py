@@ -18,18 +18,9 @@ class LogParser(object):
     Log parser for a generic Linux host.
     """
 
-    # platform = 'Linux'
-    # distribution = None
     runner = None
     file = None
     state = None
-
-    # def __new__(cls, *args, **kwargs):
-    #     # """
-    #     # Returns a subclass matching the platform and distribution.
-    #     # """
-    #     # return load_platform_subclass(Users, *args, **kwargs)
-    #     pass
 
     def __init__(self, *args, **kwargs):
         self.post_initialize(*args, **kwargs)
@@ -59,7 +50,7 @@ class LogParser(object):
 
     @staticmethod
     def get_section(text):
-        # maybe faster than regex, not sure
+        # Hate it.
         path = text.split(' ')[1]
         return path.split('/')[1]
 
@@ -68,8 +59,16 @@ class LogParser(object):
         delimiter = kwargs.get('delimiter', ',')
         quotechar = kwargs.get('quotechar', '"')
 
+        # TODO: Use a factory for other types of input.
         reader = csv.reader([line], delimiter=delimiter, quotechar=quotechar)
         row = next(reader)
+
+        # {
+        #   timestamp:
+        #     {
+        #       section: count
+        #     }
+        # }
 
         # For every 10 seconds of log lines, display stats about the traffic
         # during those 10 seconds: the sections of the web site with the most hits
@@ -88,24 +87,13 @@ class LogParser(object):
         # int(datetime.utcnow().timestamp())
 
         timestamp = int(row[3])
+        # the event time of the lastest row
         event_time = datetime.fromtimestamp(timestamp)
-        duration = timedelta(seconds=120)
-        begin_time = event_time - duration
+        stats_time = event_time - timedelta(seconds=10)
+        alert_time = event_time - timedelta(seconds=120)
         section = LogParser.get_section(row[4])
 
-        # {
-        #   timestamp:
-        #     {
-        #       section: count
-        #     }
-        # }
-
-        # get dict with values less than 2 minutes old
-        # {k:v for (k, v) in sorted(kv.items()) if k < 3}
-
-        # get dict with values less than 10 seconds old
-        # {k:v for (k, v) in sorted(kv.items()) if k < 3}
-
+        # inc the count for the event time and section
         if not event_time in self.state['rows'].keys():
             self.state['rows'][event_time] = {
                 section: 1
@@ -116,9 +104,9 @@ class LogParser(object):
             else:
                 self.state['rows'][event_time][section] += 1
 
-        # cull requests older than x == 2 minutes
+        # cull records by time (talk about that)
         self.state['rows'] = {k: v for (k, v) in self.state['rows'].items()
-                              if k >= begin_time}
+                              if k >= alert_time}
 
         # TODO: count total requests during x minutes (time), e.g. sum counts
         # TODO: we need the ave per minute
@@ -134,6 +122,13 @@ class LogParser(object):
         # 2 minutes = 120 seconds = 10 * 120 == 1200 requests
 
         print('total_requests', total_requests)
+
+        state_ = {
+            k: v for (k, v) in self.state['rows'].items()
+            if k >= stats_time
+        }
+
+        pp.pprint('stats state: {}'.format(state_))
 
         # The default threshold should be 10 requests per second (for 2 minutes (configurable))
 
@@ -151,6 +146,8 @@ class LogParser(object):
         # TODO: decorators
         # TODO: unit tests
 
+        # TODO: kwargs.get('parse_args', {})
+
         self.state = LogParser.init_state()
 
         # TODO: throwaway header
@@ -164,26 +161,9 @@ class LogParser(object):
         with input_ as file:
             for line in file:
                 try:
-                    # lines are not necessarily in order!!!
-                    state = self.parse_line(line, None)
-                    # log.debug('stats: %s', stats)
+                    self.parse_line(line, None)
                 # pylint: disable=broad-except
                 except Exception as err:
                     log.error('err: %s', err)
 
-        # {   datetime.datetime(2019, 2, 7, 15, 10, 59): {'api': 1},
-        #     datetime.datetime(2019, 2, 7, 15, 11): {'api': 7, 'report': 3},
-        #     datetime.datetime(2019, 2, 7, 15, 11, 1): {'api': 5, 'report': 2},
-        #     datetime.datetime(2019, 2, 7, 15, 11, 2): {'api': 4, 'report': 3},
-        #     datetime.datetime(2019, 2, 7, 15, 11, 3): {'api': 6, 'report': 4},
-        #     datetime.datetime(2019, 2, 7, 15, 11, 4): {'api': 7, 'report': 1},
-        #     datetime.datetime(2019, 2, 7, 15, 11, 5): {'api': 8, 'report': 4},
-        #     datetime.datetime(2019, 2, 7, 15, 11, 6): {'api': 2, 'report': 4},
-        #     datetime.datetime(2019, 2, 7, 15, 11, 7): {'api': 6, 'report': 2},
-        #     datetime.datetime(2019, 2, 7, 15, 11, 8): {'api': 6, 'report': 3},
-        #     datetime.datetime(2019, 2, 7, 15, 11, 9): {'api': 7, 'report': 5},
-        #     datetime.datetime(2019, 2, 7, 15, 11, 10): {'api': 8, 'report': 3},
-        #     datetime.datetime(2019, 2, 7, 15, 11, 11): {'api': 5},
-        #     datetime.datetime(2019, 2, 7, 15, 11, 12): {'api': 3, 'report': 7},
         pp.pprint(self.state)
-        # log.debug('state; %s', state)

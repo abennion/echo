@@ -1,6 +1,6 @@
 # pylint: disable=C0103,W0613,C0111
 """
-Tasks for managing users with Fabric.
+Tasks for managing log files.
 """
 from __future__ import print_function
 import logging as log
@@ -10,9 +10,9 @@ from userctl.log_parser import LogParser
 
 
 @task
-def list_users(ctx, file=None):
+def parse_log(ctx, file=None):
     """
-    Lists users on the specified host.
+    Parse log file content by name or input.
     """
     runner = create_runner('invoke', connection=ctx)
     parser = LogParser(runner=runner, file=file)

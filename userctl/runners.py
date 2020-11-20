@@ -33,20 +33,6 @@ class RunnerBase(object):
         raise NotImplementedError()
 
 
-class FabricRunner(RunnerBase):
-    """
-    Command runner implemented using Fabric.
-    """
-    connection = None
-
-    def post_initialize(self, *args, **kwargs):
-        self.connection = kwargs.get('connection', None)
-
-    def run_command(self, cmd, *args, **kwargs):
-        fabric_kwargs = kwargs.get('fabric_kwargs', {})
-        return self.connection.sudo(cmd, **fabric_kwargs).stdout
-
-
 class InvokeRunner(RunnerBase):
     """
     Command runner implemented using Invoke.
@@ -60,5 +46,16 @@ class InvokeRunner(RunnerBase):
         invoke_kwargs = kwargs.get('invoke_kwargs', {})
         return self.connection.run(cmd, **invoke_kwargs).stdout
 
-    # def read_stdin(self, *args, **kwargs):
-    #     return self.connection.read_our_stdin(sys.stdin)
+
+class FabricRunner(RunnerBase):
+    """
+    Command runner implemented using Fabric.
+    """
+    connection = None
+
+    def post_initialize(self, *args, **kwargs):
+        self.connection = kwargs.get('connection', None)
+
+    def run_command(self, cmd, *args, **kwargs):
+        fabric_kwargs = kwargs.get('fabric_kwargs', {})
+        return self.connection.sudo(cmd, **fabric_kwargs).stdout
